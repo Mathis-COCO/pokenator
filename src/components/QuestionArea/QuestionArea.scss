@@ -1,0 +1,15 @@
+.question_area {
+    background-color: white;
+    border: .25rem solid black;
+    border-radius: .1rem;
+    width: 50vw;
+    height: 10rem;
+    padding: 1rem;
+    box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+-webkit-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+-moz-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+    p {
+        font-family: monospace;
+        font-size: 1.25rem;
+    }
+}

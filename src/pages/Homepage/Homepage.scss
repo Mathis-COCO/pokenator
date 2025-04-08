@@ -1,0 +1,68 @@
+.homepage_container {
+  width: 100%;
+  overflow-x: hidden;
+  .homepage_top_container {
+    display: flex;
+    height: 75vh;
+    .homepage_left_container {
+      width: 30%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      .pokinator_mascot {
+        margin-left: 10rem;
+        transform: scale(1.15);
+      }
+      .pokinator_logo {
+        margin-left: 10rem;
+        margin-top: -2.5rem;
+        transform: scale(.75);
+      }
+    }
+    .homepage_right_container {
+      width: 70%;
+      .choice_btn_list_container {
+        display: flex;
+        justify-content: center;
+        margin-top: 5rem;
+      }  
+      .question_area_container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 3rem;
+      }      
+    }
+  }
+  .hommepage_bottom_container {
+    padding: 2rem 15% 0 15%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+  }
+}
+
+.homepage-background-container {
+  position: absolute;
+  top: -1rem;
+  left: -1rem;
+  z-index: -1;
+  height: 75vh;
+  width: 105%;
+  overflow: hidden;
+  img {
+    filter: blur(7.5px);
+    height: 100%;
+    width: 110%;
+  }
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
