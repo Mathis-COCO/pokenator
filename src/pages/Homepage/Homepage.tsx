@@ -57,11 +57,6 @@ function Homepage() {
           "content": "Tu joues à un jeu avec moi. Voici les règles, je vais penser à un pokemon, tu dois deviner lequel en me posant des questions à laquelle je devrais repondre par \"oui\", \"non\" ou \"je sais pas\". Il ne devra pas y avoir de commentaire inutile dan ta question. Les nom des pokemon seront en français."
       }]
   });
-    const requestOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyPokemon),
-    };
 
     useEffect(() => {
         const fetchPokemonData = async () => {
@@ -117,27 +112,32 @@ function Homepage() {
 
         fetchPokemonData();
         fetchTypeIcons();
-        postAnswer();
+        postAnswer(bodyPokemon);
     }, []);
 
-    const postAnswer = async (answer?: string) => {
+    const postAnswer = async (body: { messages: ChatMessage[]}) => {
       try {
-          const response = await fetch('chat', requestOptions);
-          console.warn(requestOptions)
-          if (!response.ok) {
-              const errorMessage = `Erreur HTTP lors de l'envoi de la réponse: Statut ${response.status}`;
-              console.error('Erreur lors de l\'envoi de la réponse:', errorMessage);
-              return;
-          }
-          const data: ChatMessage = await response.json(); // Type la réponse de l'API
-          setBodyPokemon(prevBodyPokemon => ({
-              messages: [...prevBodyPokemon.messages, data] // Ajoute le nouveau message au tableau
-          }));
-          console.log('Réponse envoyée et reçue avec succès:', data);
-          setCurrentQuestion(data.content);
-      } catch (error) {
-          console.error('Erreur lors de l\'envoi de la réponse ou du traitement de la réponse:', error);
-      }
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        };
+        const response = await fetch('chat', requestOptions);
+        console.warn(requestOptions)
+        if (!response.ok) {
+            const errorMessage = `Erreur HTTP lors de l'envoi de la réponse: Statut ${response.status}`;
+            console.error('Erreur lors de l\'envoi de la réponse:', errorMessage);
+            return;
+        }
+        const data: ChatMessage = await response.json(); // Type la réponse de l'API
+        setBodyPokemon({
+            messages: [...body.messages, data] // Ajoute le nouveau message au tableau
+        });
+        setCurrentQuestion(data.content);
+        console.log('Réponse envoyée et reçue avec succès:', data);
+    } catch (error) {
+        console.error('Erreur lors de l\'envoi de la réponse ou du traitement de la réponse:', error);
+    }
   };
 
     const getPokemonTypesWithIcons = (pokemonTypes: { name: string }[]) => {
@@ -151,14 +151,13 @@ function Homepage() {
     };
 
     const modifyBodyAndPost = (answer: string) => {
-      setBodyPokemon(prevBodyPokemon => ({
-          messages: [...prevBodyPokemon.messages, {
-              role: "user",
-              content: answer
-          }]
-      }));
-      postAnswer();
-  };
+        postAnswer({
+            messages: [...bodyPokemon.messages, {
+                role: "user",
+                content: answer
+            }]
+        });
+    };
 
     const handleCardClick = (pokemon: PokemonData) => {
         setSelectedPokemon(pokemon);
