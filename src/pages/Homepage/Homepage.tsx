@@ -7,27 +7,7 @@ import pokinatorMascot from '../../img/pokinator_mascot.png';
 import topBackgroundImg from '../../img/pokemon_map.png';
 import pokinatorLogo from '../../img/pokinator_logo.png';
 import PopupPokemonDetails from '../../components/PopupPokemonDetails/PopupPokemonDetails';
-
-interface PokemonData {
-    pokedex_id: number;
-    name: {
-        fr: string;
-        en: string;
-        jp: string;
-    };
-    sprites: {
-        regular: string;
-        shiny: string | null;
-        gmax: {
-            regular: string;
-            shiny: string;
-        } | null;
-    };
-    types: {
-        name: string;
-    }[];
-    // ... autres propriétés
-}
+import { PokemonData } from '../../types/PokemonData';
 
 interface ErrorType {
     message: string;
@@ -231,7 +211,8 @@ function Homepage() {
                 pokemon={selectedPokemon}
                 isOpen={isPopupOpen}
                 onClose={handleClosePopup}
-                typeIcons={typeIcons} // Passer typeIcons ici
+                typeIcons={typeIcons}
+                pokemonList={allPokemon}
             />
         </div>
     );

@@ -1,0 +1,21 @@
+.evolution_container {
+    display: flex;
+    gap: 1rem;
+    overflow: auto;
+    .evolution {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        padding: 0 .5rem 0 .5rem;
+        font-weight: 300;
+        border-radius: .75rem;
+        img {
+            height: 4.5rem;
+        }
+        p {
+            text-align: center;
+        }
+    }
+}
