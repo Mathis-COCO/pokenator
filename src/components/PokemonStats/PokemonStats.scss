@@ -1,0 +1,18 @@
+.stats_container {
+    display: flex;
+    gap: 1rem;
+    div {
+        padding: .5rem 1rem .5rem 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 1rem;
+        gap: .5rem;
+        background-color: rgb(black, 0.1);
+        h4 {
+            color: rgb(black, 0.75);
+            margin: 0;
+        }
+    }
+}

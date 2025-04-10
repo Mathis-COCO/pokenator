@@ -1,26 +1,8 @@
 import React from 'react';
 import './PopupPokemonDetails.scss';
-
-interface PokemonData {
-  pokedex_id: number;
-  name: {
-    fr: string;
-    en: string;
-    jp: string;
-  };
-  sprites: {
-    regular: string;
-    shiny: string | null;
-    gmax: {
-      regular: string;
-      shiny: string;
-    } | null;
-  };
-  types: {
-    name: string;
-  }[];
-  // ... autres propriétés (assurez-vous d'avoir toutes les propriétés nécessaires ici)
-}
+import { PokemonData } from '../../types/PokemonData';
+import PokemonStats from '../PokemonStats/PokemonStats';
+import PokemonEvolutions from '../PokemonEvolutions/PokemonEvolutions';
 
 interface TypeIcon {
   name: string;
@@ -31,7 +13,8 @@ interface PopupPokemonDetailsProps {
   pokemon: PokemonData | null;
   isOpen: boolean;
   onClose: () => void;
-  typeIcons: TypeIcon[]; // Accepter typeIcons en tant que prop
+  typeIcons: TypeIcon[];
+  pokemonList: PokemonData[];
 }
 
 function getTypeColor(typeName: string): string {
@@ -77,10 +60,12 @@ function getTypeColor(typeName: string): string {
   }
 }
 
-function PopupPokemonDetails({ pokemon, isOpen, onClose, typeIcons }: PopupPokemonDetailsProps) {
+function PopupPokemonDetails({ pokemon, isOpen, onClose, typeIcons, pokemonList }: PopupPokemonDetailsProps) {
   if (!isOpen || !pokemon) {
     return null;
   }
+
+  console.log(pokemon)
 
   const mainType = pokemon.types[0]?.name;
   const mainTypeColor = mainType ? getTypeColor(mainType) : '#f0f0f0';
@@ -89,28 +74,62 @@ function PopupPokemonDetails({ pokemon, isOpen, onClose, typeIcons }: PopupPokem
     : null;
 
   return (
-    <div className="popup-overlay">
+  <div className="popup-overlay">
+      <button className="close-button" onClick={onClose}>
+        X
+      </button>
       <div className="popup-content" style={{ backgroundColor: mainTypeColor }}>
         <div className="left_container">
-          <h2>{pokemon.name.fr}</h2>
-          Types: {pokemon.types.map((type) => (
-            <div className='pokemon_type_img_container'>
-              {/* <span key={type.name} className={`type ${type.name}`}>{type.name} </span> */}
-              <img src={typeIcons.find(icon => icon.name === type.name)?.image} alt={type.name} className='pokemon_type_img' />
+          <div className="pokemon_main_infos_container">
+            <div className="pokemon_details">
+              <h2>{pokemon.name.fr}</h2>
+              <div className="pokemon_physical_details">
+                <h3>{pokemon.height}</h3>
+                <h3>{pokemon.weight}</h3>              
+              </div>
             </div>
-          ))}
+            <div className="pokemon_types_container">
+              {pokemon.types.map((type) => (
+                <div className="pokemon_type_img_container">
+                  <img src={typeIcons.find(icon => icon.name === type.name)?.image} alt={type.name} className='pokemon_type_img' />
+                </div>
+              ))}
+            </div>
+          </div>
+
           <img src={pokemon.sprites.regular} alt={pokemon.name.fr} className="pokemon-sprite" />
 
           {mainTypeIcon && (
             <div className="main-type-icon">
               <img src={mainTypeIcon} alt={mainType} />
             </div>
-          )}          
+          )}     
+          <h2 className="pokemon_category">{pokemon.category}</h2>     
         </div>
         <div className="right_container">
-          <button className="close-button" onClick={onClose}>
-            Fermer
-          </button>
+          <PokemonEvolutions pokemon={pokemon} pokemonList={pokemonList} />
+          <h3>Génération {pokemon.generation}</h3>
+          <h3>Taux de capture : {pokemon.catch_rate}%</h3>
+          <PokemonStats pokemonStats={pokemon.stats} />
+          <p className='resistances_text'>Résistances : </p>
+          <div className="resistances_container">
+            {pokemon.resistances.map((resistance) => {
+                const resistanceIcon = typeIcons.find(icon => icon.name === resistance.name)?.image;
+                return (
+                    <div key={resistance.name} className="resistance">
+                        {resistanceIcon ? (
+                          <div className="type_icon">
+                            <img src={resistanceIcon} alt={resistance.name} className="resistance_icon" />
+                          </div>
+                        ) : (
+                            <p>{resistance.name}</p>
+                        )}
+                        <h4>{resistance.multiplier}x</h4>
+                    </div>
+                );
+            })}
+        </div>
+
         </div>
 
 
