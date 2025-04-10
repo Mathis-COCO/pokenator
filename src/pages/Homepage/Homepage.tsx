@@ -41,6 +41,7 @@ function Homepage() {
     const [selectedPokemon, setSelectedPokemon] = useState<PokemonData | null>(null);
     const [isPopupOpen, setIsPopupOpen] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState<string>('');
+    const [allPokemon, setAllPokemon] = useState<PokemonData[]>([]);
     const [bodyPokemon, setBodyPokemon] = useState<ChatBody>(iaContext);
 
     useEffect(() => {
@@ -75,10 +76,10 @@ function Homepage() {
                 console.error('Erreur lors de la récupération des données Pokémon:', errorMessage);
                 throw new Error(errorMessage);
             }
-            const allPokemon: PokemonData[] = await response.json();
-            console.log('Données Pokémon récupérées avec succès:', allPokemon);
+            const data: PokemonData[] = await response.json();
+            setAllPokemon(data);
 
-            const filteredPokemon = allPokemon.filter((pokemon) =>
+            const filteredPokemon = data.filter((pokemon) =>
                 pokemons.some(
                     (name) => pokemon.name.fr === name || pokemon.name.en === name
                 )
@@ -138,7 +139,11 @@ function Homepage() {
     const modifyBodyAndPost = (answer: string) => {
         const lastMessage = bodyPokemon.messages[bodyPokemon.messages.length - 1];
         const msgContent = lastMessage.content;
-        const msgContentJson = JSON.parse(msgContent.substring(7, msgContent.length - 3))
+        let msgContentJson = { type: "", content: ""};
+        if (msgContent.startsWith('```json')) {
+            msgContentJson = JSON.parse(msgContent.substring(7, msgContent.length - 3))
+        }
+
         if (lastMessage.role === "assistant" && msgContentJson.type === "answer" && answer === "oui") {
             const pokedex = [
                 ...pokemonNamesList, msgContentJson.content
