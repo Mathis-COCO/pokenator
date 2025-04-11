@@ -303,8 +303,8 @@ function Homepage() {
                 </div>
                 <div className={`${settingsView ? 'active' : 'inactive'}`}>
                     <div className="language_btn_list">
-                        <button onClick={() => setAppLanguage('fr')}>fr</button>
-                        <button onClick={() => setAppLanguage('en')}>en</button>
+                        <button onClick={() => setAppLanguage('fr')} className={`${appLanguage === 'fr' ? 'btn_active' :  'btn_inactive'}`}>fr</button>
+                        <button onClick={() => setAppLanguage('en')} className={`${appLanguage === 'en' ? 'btn_active' :  'btn_inactive'}`}>en</button>
                         {/* <button onClick={() => setAppLanguage('jp')}>jp</button> */}
                     </div>
                     <p>temperature {AiTemperature}</p>
