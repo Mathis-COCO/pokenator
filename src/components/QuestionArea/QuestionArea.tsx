@@ -3,7 +3,7 @@ import './QuestionArea.scss';
 import pokeballPresentation from '../../img/pokeball_presentation.png';
 
 interface QuestionAreaProps {
-  question: string;
+  question: string | null;
 }
 
 function QuestionArea({ question }: QuestionAreaProps) {
