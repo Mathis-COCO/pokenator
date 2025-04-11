@@ -15,6 +15,7 @@ interface PopupPokemonDetailsProps {
   onClose: () => void;
   typeIcons: TypeIcon[];
   pokemonList: PokemonData[];
+  appLanguage: string;
 }
 
 function getTypeColor(typeName: string): string {
@@ -60,7 +61,7 @@ function getTypeColor(typeName: string): string {
   }
 }
 
-function PopupPokemonDetails({ pokemon, isOpen, onClose, typeIcons, pokemonList }: PopupPokemonDetailsProps) {
+function PopupPokemonDetails({ pokemon, isOpen, onClose, typeIcons, pokemonList, appLanguage }: PopupPokemonDetailsProps) {
   if (!isOpen || !pokemon) {
     return null;
   }
@@ -82,7 +83,7 @@ function PopupPokemonDetails({ pokemon, isOpen, onClose, typeIcons, pokemonList 
         <div className="left_container">
           <div className="pokemon_main_infos_container">
             <div className="pokemon_details">
-              <h2>{pokemon.name.fr}</h2>
+              <h2>{pokemon.name[appLanguage as keyof typeof pokemon.name]}</h2>
               <div className="pokemon_physical_details">
                 <h3>{pokemon.height}</h3>
                 <h3>{pokemon.weight}</h3>              
@@ -91,13 +92,13 @@ function PopupPokemonDetails({ pokemon, isOpen, onClose, typeIcons, pokemonList 
             <div className="pokemon_types_container">
               {pokemon.types.map((type) => (
                 <div className="pokemon_type_img_container">
-                  <img src={typeIcons.find(icon => icon.name === type.name)?.image} alt={type.name} className='pokemon_type_img' />
+                  <img src={typeIcons.find(icon => icon.name === type.name)?.image} alt={pokemon.name[appLanguage as keyof typeof pokemon.name]} className='pokemon_type_img' />
                 </div>
               ))}
             </div>
           </div>
 
-          <img src={pokemon.sprites.regular} alt={pokemon.name.fr} className="pokemon-sprite" />
+          <img src={pokemon.sprites.regular} alt={pokemon.name[appLanguage as keyof typeof pokemon.name]} className="pokemon-sprite" />
 
           {mainTypeIcon && (
             <div className="main-type-icon">
@@ -107,7 +108,7 @@ function PopupPokemonDetails({ pokemon, isOpen, onClose, typeIcons, pokemonList 
           <h2 className="pokemon_category">{pokemon.category}</h2>     
         </div>
         <div className="right_container">
-          <PokemonEvolutions pokemon={pokemon} pokemonList={pokemonList} />
+          <PokemonEvolutions pokemon={pokemon} pokemonList={pokemonList} appLanguage={appLanguage} />
           <h3>Génération {pokemon.generation}</h3>
           <h3>Taux de capture : {pokemon.catch_rate}%</h3>
           <PokemonStats pokemonStats={pokemon.stats} />

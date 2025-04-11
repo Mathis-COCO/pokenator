@@ -6,6 +6,7 @@ import './Homepage.scss';
 import pokinatorMascot from '../../img/pokinator_mascot.png';
 import topBackgroundImg from '../../img/pokemon_map.png';
 import pokinatorLogo from '../../img/pokinator_logo.png';
+import settings_icon from '../../img/settings_icon.png';
 import PopupPokemonDetails from '../../components/PopupPokemonDetails/PopupPokemonDetails';
 import { PokemonData } from '../../types/PokemonData';
 
@@ -40,11 +41,18 @@ function Homepage() {
     const [typeIcons, setTypeIcons] = useState<{ name: string; image: string }[]>([]);
     const [selectedPokemon, setSelectedPokemon] = useState<PokemonData | null>(null);
     const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [appLanguage, setAppLanguage] = useState('fr');
+    const [settingsView, setSettingsView] = useState(false);
+    const [AiTemperature, setAiTemperature] = useState(1);
     const [currentQuestion, setCurrentQuestion] = useState<string>('');
     const [allPokemon, setAllPokemon] = useState<PokemonData[]>([]);
     const [bodyPokemon, setBodyPokemon] = useState<ChatBody>(iaContext);
 
     useEffect(() => {
+        const storedLanguage = localStorage.getItem('appLanguage');
+        if (storedLanguage) {
+            setAppLanguage(JSON.parse(storedLanguage));
+        }
         const fetchTypeIcons = async () => {
             try {
                 const response = await fetch('https://pokebuildapi.fr/api/v1/types');
@@ -113,9 +121,9 @@ function Homepage() {
             console.error('Erreur lors de l\'envoi de la réponse:', errorMessage);
             return;
         }
-        const data: ChatMessage = await response.json(); // Type la réponse de l'API
+        const data: ChatMessage = await response.json();
         setBodyPokemon({
-            messages: [...body.messages, data] // Ajoute le nouveau message au tableau
+            messages: [...body.messages, data]
         });
 
         const botResponse = JSON.parse(data.content.substring(7, data.content.length - 3));
@@ -173,6 +181,10 @@ function Homepage() {
         setSelectedPokemon(null);
     };
 
+    const handleUpdateSettings = () => {
+        localStorage.setItem('appLanguage', JSON.stringify(appLanguage));
+    }
+
     if (loading) {
         return <div>Chargement...</div>;
     }
@@ -201,7 +213,7 @@ function Homepage() {
                 {pokemonData.map((pokemon: PokemonData) => (
                     <PokemonCard
                         key={pokemon.pokedex_id}
-                        pokemonName={pokemon.name.fr}
+                        pokemonName={pokemon.name[appLanguage as keyof typeof pokemon.name]}
                         imageUrl={pokemon.sprites.regular}
                         types={getPokemonTypesWithIcons(pokemon.types)}
                         onCardClick={handleCardClick}
@@ -218,7 +230,35 @@ function Homepage() {
                 onClose={handleClosePopup}
                 typeIcons={typeIcons}
                 pokemonList={allPokemon}
+                appLanguage={appLanguage}
             />
+            <div className={`${settingsView ? 'settings_fullsize' : 'settings'}`}>
+                <div className="settings_visual">
+                    <p className={`placeholder_text ${settingsView ? 'display_placeholder' : ''}`} onClick={() => setSettingsView(!settingsView)}>paramètres</p>
+                    <img src={settings_icon} alt="" onClick={() => setSettingsView(!settingsView)} />
+                </div>
+                <div className={`${settingsView ? 'active' : 'inactive'}`}>
+                    <div className="language_btn_list">
+                        <button onClick={() => setAppLanguage('fr')}>fr</button>
+                        <button onClick={() => setAppLanguage('en')}>en</button>
+                        {/* <button onClick={() => setAppLanguage('jp')}>jp</button> */}
+                    </div>
+                    <p>temperature {AiTemperature}</p>
+                    <div className="range_container">
+                        <input type="range" name="" id="temperatureSlider" min={0} max={2} step={0.1} list='values' value={AiTemperature} onChange={(e) => setAiTemperature(parseFloat(e.target.value))} />
+                    </div>
+                    <div className="save_btn_container">
+                        <button onClick={handleUpdateSettings}>enregistrer</button>
+                    </div>
+                    <datalist id="values">
+                        <option value="0" label="0"></option>
+                        <option value="0.5" label="0.5"></option>
+                        <option value="1" label="1"></option>
+                        <option value="1.5" label="1.5"></option>
+                        <option value="2" label="2"></option>
+                    </datalist>
+                </div>
+            </div>
         </div>
     );
 }

@@ -5,6 +5,7 @@ import { PokemonData } from '../../types/PokemonData';
 interface PokemonEvolutionsProps {
   pokemonList: PokemonData[];
   pokemon: PokemonData;
+  appLanguage: string;
 }
 
 function getTypeColor(typeName: string): string {
@@ -31,7 +32,7 @@ function getTypeColor(typeName: string): string {
   }
 }
 
-function PokemonEvolutions({ pokemonList, pokemon }: PokemonEvolutionsProps) {
+function PokemonEvolutions({ pokemonList, pokemon, appLanguage }: PokemonEvolutionsProps) {
   return (
     <div className="evolution_container">
       {/* Évolutions précédentes */}
@@ -48,11 +49,11 @@ function PokemonEvolutions({ pokemonList, pokemon }: PokemonEvolutionsProps) {
             {evoData && (
               <img
                 src={evoData.sprites.regular}
-                alt={evoData.name.fr}
+                alt={evoData.name[appLanguage as keyof typeof evoData.name]}
                 className="evolution-img"
               />
             )}
-            <p>{preEvolution.name}</p>
+            <p>{evoData?.name[appLanguage as keyof typeof evoData.name]}</p>
           </div>
         );
       })}
@@ -63,7 +64,7 @@ function PokemonEvolutions({ pokemonList, pokemon }: PokemonEvolutionsProps) {
         style={{ backgroundColor: getTypeColor(pokemon.types[0]?.name) }}
       >
         <img src={pokemon.sprites.regular} alt={pokemon.name.fr} className="evolution-img" />
-        <p>{pokemon.name.fr}</p>
+        <p>{pokemon.name[appLanguage as keyof typeof pokemon.name]}</p>
       </div>
 
       {/* Évolutions suivantes */}
@@ -80,11 +81,11 @@ function PokemonEvolutions({ pokemonList, pokemon }: PokemonEvolutionsProps) {
             {evoData && (
               <img
                 src={evoData.sprites.regular}
-                alt={evoData.name.fr}
+                alt={evoData.name[appLanguage as keyof typeof evoData.name]}
                 className="evolution-img"
               />
             )}
-            <p>{nextEvolution.name}</p>
+            <p>{evoData?.name[appLanguage as keyof typeof evoData.name]}</p>
           </div>
         );
       })}
