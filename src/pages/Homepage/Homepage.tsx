@@ -49,20 +49,34 @@ function Homepage() {
     const [bodyPokemon, setBodyPokemon] = useState<ChatBody>(iaContext);
 
     useEffect(() => {
-        const storedLanguage = localStorage.getItem('appLanguage');
-        if (storedLanguage) {
-            setAppLanguage(JSON.parse(storedLanguage));
-        }
+        // const storedLanguage = localStorage.getItem('appLanguage');
+        // if (storedLanguage) {
+        //     setAppLanguage(JSON.parse(storedLanguage));
+        // }
 
         loadData();
     }, []);
 
     const loadData = async () => {
         const pokedex = (await fetchPokemonsFromDatabase()).map(pokemon => pokemon.pokemonName);
-        setPokedex(pokedex)
+        fetchSettings();
+        setPokedex(pokedex);
         fetchPokemonData(pokedex);
         fetchTypeIcons();
         postAnswer(bodyPokemon);
+    }
+
+    const fetchSettings = async () => {
+        const requestOptions = {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        };
+
+        const settings = await fetch("/setting", requestOptions)
+            .then((data) => data.json());
+        
+        setAiTemperature(settings.temperature);
+        setAppLanguage(settings.language);
     }
 
     const fetchTypeIcons = async () => {
@@ -221,7 +235,18 @@ function Homepage() {
     };
 
     const handleUpdateSettings = () => {
-        localStorage.setItem('appLanguage', JSON.stringify(appLanguage));
+        // localStorage.setItem('appLanguage', JSON.stringify(appLanguage));
+
+        const requestOptions = {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                "language": appLanguage,
+                "temperature": AiTemperature
+            })
+        };
+
+        fetch("/setting", requestOptions);
     }
 
     if (loading) {

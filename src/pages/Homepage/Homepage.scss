@@ -38,7 +38,7 @@
   .hommepage_bottom_container {
     padding: 2rem 15% 0 15%;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(5, minmax(200px, 1fr));
     gap: 10px;
   }
 }
