@@ -24,7 +24,7 @@ interface ChatBody {
 }
 
 function Homepage() {
-    const iaContext: ChatBody = {
+    const [iaContext, setIaContext] = useState<ChatBody>({
         "messages": [{
             "role": "system",
             "content": `Tu joues à un jeu avec moi. Voici les règles, je vais penser à un pokemon, tu dois deviner lequel` +
@@ -33,8 +33,8 @@ function Homepage() {
             `soit "answer" si le contenu est une tentative à trouver un pokemon. Le second attribut "content" contiendra le contenu de ta question ou reponse.` +
             `Lorsque le type est "answer" le content contiendra uniquement le nom du pokemeon et rien d'autre.Ta reponse devra comporter uniquement le json.`
         }]
-    };
-    const [ pokemonNamesList, setPokemonNameList ] = useState<String[]>([]);
+    });
+    const [ pokedex, setPokedex ] = useState<String[]>([]);
     const [pokemonData, setPokemonData] = useState<PokemonData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<ErrorType | null>(null);
@@ -44,7 +44,7 @@ function Homepage() {
     const [appLanguage, setAppLanguage] = useState('fr');
     const [settingsView, setSettingsView] = useState(false);
     const [AiTemperature, setAiTemperature] = useState(1);
-    const [currentQuestion, setCurrentQuestion] = useState<string>('');
+    const [currentQuestion, setCurrentQuestion] = useState<string | null>(null);
     const [allPokemon, setAllPokemon] = useState<PokemonData[]>([]);
     const [bodyPokemon, setBodyPokemon] = useState<ChatBody>(iaContext);
 
@@ -53,25 +53,32 @@ function Homepage() {
         if (storedLanguage) {
             setAppLanguage(JSON.parse(storedLanguage));
         }
-        const fetchTypeIcons = async () => {
-            try {
-                const response = await fetch('https://pokebuildapi.fr/api/v1/types');
-                if (!response.ok) {
-                    const errorMessage = `Erreur HTTP! Statut: ${response.status}`;
-                    console.error('Erreur lors de la récupération des icônes de type:', errorMessage);
-                    throw new Error(errorMessage);
-                }
-                const data = await response.json();
-                setTypeIcons(data);
-            } catch (error) {
-                console.error('Erreur lors de la récupération des icônes de type:', error);
-            }
-        };
 
-        fetchPokemonData(pokemonNamesList);
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        const pokedex = (await fetchPokemonsFromDatabase()).map(pokemon => pokemon.pokemonName);
+        setPokedex(pokedex)
+        fetchPokemonData(pokedex);
         fetchTypeIcons();
         postAnswer(bodyPokemon);
-    }, []);
+    }
+
+    const fetchTypeIcons = async () => {
+        try {
+            const response = await fetch('https://pokebuildapi.fr/api/v1/types');
+            if (!response.ok) {
+                const errorMessage = `Erreur HTTP! Statut: ${response.status}`;
+                console.error('Erreur lors de la récupération des icônes de type:', errorMessage);
+                throw new Error(errorMessage);
+            }
+            const data = await response.json();
+            setTypeIcons(data);
+        } catch (error) {
+            console.error('Erreur lors de la récupération des icônes de type:', error);
+        }
+    };
 
     const fetchPokemonData = async (pokemons: String[]) => {
         setLoading(true);
@@ -87,9 +94,14 @@ function Homepage() {
             const data: PokemonData[] = await response.json();
             setAllPokemon(data);
 
+            const newIaContext = iaContext;
+            newIaContext.messages[0].content = iaContext.messages[0].content + `Voici tous les pokemons possible: ${data.map(pokemon => pokemon.name.fr).join(', ')}.`;
+            setIaContext(newIaContext);
+
             const filteredPokemon = data.filter((pokemon) =>
                 pokemons.some(
-                    (name) => pokemon.name.fr === name || pokemon.name.en === name
+                    (name) => pokemon.name.fr.toLowerCase() === name.toLowerCase()
+                        || pokemon.name.en.toLowerCase() === name.toLowerCase()
                 )
             );
 
@@ -109,30 +121,30 @@ function Homepage() {
     };
 
     const postAnswer = async (body: { messages: ChatMessage[]}) => {
-      try {
-        const requestOptions = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        };
-        const response = await fetch('chat', requestOptions);
-        if (!response.ok) {
-            const errorMessage = `Erreur HTTP lors de l'envoi de la réponse: Statut ${response.status}`;
-            console.error('Erreur lors de l\'envoi de la réponse:', errorMessage);
-            return;
+        try {
+            const requestOptions = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            };
+            const response = await fetch('chat', requestOptions);
+            if (!response.ok) {
+                const errorMessage = `Erreur HTTP lors de l'envoi de la réponse: Statut ${response.status}`;
+                console.error('Erreur lors de l\'envoi de la réponse:', errorMessage);
+                return;
+            }
+            const data: ChatMessage = await response.json(); // Type la réponse de l'API
+            setBodyPokemon({
+                messages: [...body.messages, data] // Ajoute le nouveau message au tableau
+            });
+
+            const botResponse = JSON.parse(data.content.substring(7, data.content.length - 3));
+
+            setCurrentQuestion(botResponse.type !== "answer" ? botResponse.content : `Penses tu au pokemon ${botResponse.content}?`);
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi de la réponse ou du traitement de la réponse:', error);
         }
-        const data: ChatMessage = await response.json();
-        setBodyPokemon({
-            messages: [...body.messages, data]
-        });
-
-        const botResponse = JSON.parse(data.content.substring(7, data.content.length - 3));
-
-        setCurrentQuestion(botResponse.type !== "answer" ? botResponse.content : `Penses tu au pokemon ${botResponse.content}?`);
-    } catch (error) {
-        console.error('Erreur lors de l\'envoi de la réponse ou du traitement de la réponse:', error);
-    }
-  };
+    };
 
     const getPokemonTypesWithIcons = (pokemonTypes: { name: string }[]) => {
         return pokemonTypes.map((type) => {
@@ -144,6 +156,28 @@ function Homepage() {
         });
     };
 
+    const fetchPokemonsFromDatabase = async (): Promise<{ id: number, pokemonName: string}[]> => {
+        const requestOptions = {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        };
+
+        return fetch('/pokedex', requestOptions)
+            .then(data => data.json());
+    }
+
+    const savePokemonInDatabase = async (pokemonName: string): Promise<void> => {
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                "pokemonName": pokemonName
+            })
+        };
+
+        fetch('/pokedex', requestOptions);
+    }
+
     const modifyBodyAndPost = (answer: string) => {
         const lastMessage = bodyPokemon.messages[bodyPokemon.messages.length - 1];
         const msgContent = lastMessage.content;
@@ -153,13 +187,18 @@ function Homepage() {
         }
 
         if (lastMessage.role === "assistant" && msgContentJson.type === "answer" && answer === "oui") {
-            const pokedex = [
-                ...pokemonNamesList, msgContentJson.content
+            const pokemonName = msgContentJson.content;
+            const newPokedex = [
+                ...pokedex, pokemonName
             ];
-            setPokemonNameList(pokedex);
-            fetchPokemonData(pokedex);
+            setPokedex(newPokedex);
+            fetchPokemonData(newPokedex);
             setBodyPokemon(iaContext);
             postAnswer(iaContext);
+
+            if (!pokedex.includes(pokemonName)) {
+                savePokemonInDatabase(msgContentJson.content);
+            }
         } else {
             postAnswer({
                 messages: [...bodyPokemon.messages, {
