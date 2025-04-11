@@ -38,7 +38,7 @@
   .hommepage_bottom_container {
     padding: 2rem 15% 0 15%;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(5, minmax(200px, 1fr));
     gap: 10px;
   }
 }
@@ -169,6 +169,12 @@
     .language_btn_list {
       display: flex;
       justify-content: space-evenly;
+      .btn_active {
+        background-color: rgb(0, 110, 255);
+      }
+      .btn_inactive {
+        background-color: grey;
+      }
     }
     .range_container {
       display: flex;

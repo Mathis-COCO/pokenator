@@ -49,20 +49,34 @@ function Homepage() {
     const [bodyPokemon, setBodyPokemon] = useState<ChatBody>(iaContext);
 
     useEffect(() => {
-        const storedLanguage = localStorage.getItem('appLanguage');
-        if (storedLanguage) {
-            setAppLanguage(JSON.parse(storedLanguage));
-        }
+        // const storedLanguage = localStorage.getItem('appLanguage');
+        // if (storedLanguage) {
+        //     setAppLanguage(JSON.parse(storedLanguage));
+        // }
 
         loadData();
     }, []);
 
     const loadData = async () => {
         const pokedex = (await fetchPokemonsFromDatabase()).map(pokemon => pokemon.pokemonName);
-        setPokedex(pokedex)
+        fetchSettings();
+        setPokedex(pokedex);
         fetchPokemonData(pokedex);
         fetchTypeIcons();
         postAnswer(bodyPokemon);
+    }
+
+    const fetchSettings = async () => {
+        const requestOptions = {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        };
+
+        const settings = await fetch("/setting", requestOptions)
+            .then((data) => data.json());
+        
+        setAiTemperature(settings.temperature);
+        setAppLanguage(settings.language);
     }
 
     const fetchTypeIcons = async () => {
@@ -221,7 +235,18 @@ function Homepage() {
     };
 
     const handleUpdateSettings = () => {
-        localStorage.setItem('appLanguage', JSON.stringify(appLanguage));
+        // localStorage.setItem('appLanguage', JSON.stringify(appLanguage));
+
+        const requestOptions = {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                "language": appLanguage,
+                "temperature": AiTemperature
+            })
+        };
+
+        fetch("/setting", requestOptions);
     }
 
     if (loading) {
@@ -278,8 +303,8 @@ function Homepage() {
                 </div>
                 <div className={`${settingsView ? 'active' : 'inactive'}`}>
                     <div className="language_btn_list">
-                        <button onClick={() => setAppLanguage('fr')}>fr</button>
-                        <button onClick={() => setAppLanguage('en')}>en</button>
+                        <button onClick={() => setAppLanguage('fr')} className={`${appLanguage === 'fr' ? 'btn_active' :  'btn_inactive'}`}>fr</button>
+                        <button onClick={() => setAppLanguage('en')} className={`${appLanguage === 'en' ? 'btn_active' :  'btn_inactive'}`}>en</button>
                         {/* <button onClick={() => setAppLanguage('jp')}>jp</button> */}
                     </div>
                     <p>temperature {AiTemperature}</p>
