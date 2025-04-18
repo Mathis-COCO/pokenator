@@ -23,45 +23,70 @@ interface ChatBody {
     messages: ChatMessage[];
 }
 
+const formatString = (template: string, ...args: string[]): string => {
+    return template.replace(/{([0-9]+)}/g, function (match, index) {
+        return typeof args[index] === 'undefined' ? match : args[index];
+    });
+}
+
 function Homepage() {
+    const iaContextTemplate: string = `Tu joues à un jeu avec moi. Voici les règles, je vais penser à un pokemon, tu dois deviner lequel ` +
+            `en me posant des questions à laquelle je devrais repondre par "oui", "non" ou "je sais pas. ` +
+            `Les nom des pokemons et tes questions seront en {0}. ` +
+            `La réponse devra être dans un format json. Un 1er attribut nommé "type" contenant soit "question" si le contenu est une question, ` +
+            `soit "answer" si le contenu est une tentative à trouver un pokemon. Le second attribut "content" contiendra le contenu de ta question ou reponse. ` +
+            `Lorsque le type est "answer" le content contiendra uniquement le nom du pokemeon et rien d'autre.Ta reponse devra comporter uniquement le json. ` +
+            `Voici tous les pokemons possible: {1}.`
+
     const [iaContext, setIaContext] = useState<ChatBody>({
         "messages": [{
             "role": "system",
-            "content": `Tu joues à un jeu avec moi. Voici les règles, je vais penser à un pokemon, tu dois deviner lequel` +
-            `en me posant des questions à laquelle je devrais repondre par "oui", "non" ou "je sais pas". Les nom des pokemons seront en français.` +
-            `La réponse devra être dans un format json. Un 1er attribut nommé "type" contenant soit "question" si le contenu est une question,` +
-            `soit "answer" si le contenu est une tentative à trouver un pokemon. Le second attribut "content" contiendra le contenu de ta question ou reponse.` +
-            `Lorsque le type est "answer" le content contiendra uniquement le nom du pokemeon et rien d'autre.Ta reponse devra comporter uniquement le json.`
+            "content": ""
         }]
     });
     const [ pokedex, setPokedex ] = useState<String[]>([]);
     const [pokemonData, setPokemonData] = useState<PokemonData[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<ErrorType | null>(null);
     const [typeIcons, setTypeIcons] = useState<{ name: string; image: string }[]>([]);
     const [selectedPokemon, setSelectedPokemon] = useState<PokemonData | null>(null);
-    const [isPopupOpen, setIsPopupOpen] = useState(false);
-    const [appLanguage, setAppLanguage] = useState('fr');
     const [settingsView, setSettingsView] = useState(false);
-    const [AiTemperature, setAiTemperature] = useState(1);
-    const [currentQuestion, setCurrentQuestion] = useState<string | null>(null);
     const [allPokemon, setAllPokemon] = useState<PokemonData[]>([]);
     const [bodyPokemon, setBodyPokemon] = useState<ChatBody>(iaContext);
+    
+    // Page state
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<ErrorType | null>(null);
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [currentQuestion, setCurrentQuestion] = useState<string | null>(null);
+    const [isThinking, setIsThinking] = useState<boolean>(false);
+    
+    // settings
+    const [appLanguage, setAppLanguage] = useState('fr');
+    const [AiTemperature, setAiTemperature] = useState(1);
+    const [tempAppLanguage, setTempAppLanguage] = useState('fr');
 
     useEffect(() => {
         loadData();
     }, []);
 
     const loadData = async () => {
-        const pokedex = (await fetchPokemonsFromDatabase()).map(pokemon => pokemon.pokemonName);
-        fetchSettings();
-        setPokedex(pokedex);
-        fetchPokemonData(pokedex);
-        fetchTypeIcons();
+        const [pokedex, allPokemon, settings] = await Promise.all([
+            fetchPokemonsFromDatabase(),
+            fetchAllPokemon(),
+            fetchSettings(),
+        ]);
+
+        console.log(settings);
+
+        await Promise.all([
+            fetchPokemonData(pokedex, allPokemon),
+            fetchTypeIcons(),
+            updateContext(settings.language, allPokemon),
+        ]);
+
         postAnswer(bodyPokemon);
     }
 
-    const fetchSettings = async () => {
+    const fetchSettings = async (): Promise<{ language: string, temperature: number }> => {
         const requestOptions = {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
@@ -72,6 +97,12 @@ function Homepage() {
         
         setAiTemperature(settings.temperature);
         setAppLanguage(settings.language);
+        setTempAppLanguage(settings.language);
+
+        return {
+            language: settings.language,
+            temperature: settings.temperature
+        }
     }
 
     const fetchTypeIcons = async () => {
@@ -89,25 +120,24 @@ function Homepage() {
         }
     };
 
-    const fetchPokemonData = async (pokemons: String[]) => {
+    const fetchAllPokemon = async (): Promise<PokemonData[]> => {
+        const response = await fetch('https://tyradex.vercel.app/api/v1/pokemon');
+        if (!response.ok) {
+            const errorMessage = `Erreur HTTP! Statut: ${response.status}`;
+            console.error('Erreur lors de la récupération des données Pokémon:', errorMessage);
+            return [];
+        }
+        const data: PokemonData[] = await response.json();
+        setAllPokemon(data);
+        return data;
+    }
+
+    const fetchPokemonData = async (pokemons: String[], allPokemons: PokemonData[]) => {
         setLoading(true);
         setError(null);
 
         try {
-            const response = await fetch('https://tyradex.vercel.app/api/v1/pokemon');
-            if (!response.ok) {
-                const errorMessage = `Erreur HTTP! Statut: ${response.status}`;
-                console.error('Erreur lors de la récupération des données Pokémon:', errorMessage);
-                return;
-            }
-            const data: PokemonData[] = await response.json();
-            setAllPokemon(data);
-
-            const newIaContext = iaContext;
-            newIaContext.messages[0].content = iaContext.messages[0].content + `Voici tous les pokemons possible: ${data.map(pokemon => pokemon.name.fr).join(', ')}.`;
-            setIaContext(newIaContext);
-
-            const filteredPokemon = data.filter((pokemon) =>
+            const filteredPokemon = allPokemons.filter((pokemon) =>
                 pokemons.some(
                     (name) => pokemon.name.fr.toLowerCase() === name.toLowerCase()
                         || pokemon.name.en.toLowerCase() === name.toLowerCase()
@@ -129,6 +159,14 @@ function Homepage() {
         }
     };
 
+    const updateContext = (language: string, allPokemon: PokemonData[]) => {
+        const newIaContext = iaContext;
+        const pokemonList = allPokemon.map(pokemon => language === "fr" ? pokemon.name.fr : pokemon.name.en).join(', ');
+        newIaContext.messages[0].content = formatString(iaContextTemplate, language === "fr" ? "français" : "anglais", pokemonList);
+        setIaContext(newIaContext);
+        setBodyPokemon(iaContext);
+    }
+
     const postAnswer = async (body: { messages: ChatMessage[]}) => {
         try {
             const requestOptions = {
@@ -136,7 +174,7 @@ function Homepage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
             };
-            const response = await fetch('http://back/api/chat', requestOptions);
+            const response = await fetch('api/chat', requestOptions);
             if (!response.ok) {
                 const errorMessage = `Erreur HTTP lors de l'envoi de la réponse: Statut ${response.status}`;
                 console.error('Erreur lors de l\'envoi de la réponse:', errorMessage);
@@ -150,8 +188,10 @@ function Homepage() {
             const botResponse = JSON.parse(data.content.substring(7, data.content.length - 3));
 
             setCurrentQuestion(botResponse.type !== "answer" ? botResponse.content : `Penses tu au pokemon ${botResponse.content}?`);
+            setIsThinking(false);
         } catch (error) {
             console.error('Erreur lors de l\'envoi de la réponse ou du traitement de la réponse:', error);
+            setIsThinking(false);
         }
     };
 
@@ -165,14 +205,18 @@ function Homepage() {
         });
     };
 
-    const fetchPokemonsFromDatabase = async (): Promise<{ id: number, pokemonName: string}[]> => {
+    const fetchPokemonsFromDatabase = async (): Promise<string[]> => {
         const requestOptions = {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         };
 
-        return fetch('api/pokedex', requestOptions)
+        const pokemons: { id: number, pokemonName: string}[] = await fetch('api/pokedex', requestOptions)
             .then(data => data.json());
+
+        const pokedex = pokemons.map(pokemon => pokemon.pokemonName);
+        setPokedex(pokedex);
+        return pokedex;
     }
 
     const savePokemonInDatabase = async (pokemonName: string): Promise<void> => {
@@ -188,6 +232,11 @@ function Homepage() {
     }
 
     const modifyBodyAndPost = (answer: string) => {
+        if (isThinking) {
+            return;
+        }
+        setIsThinking(true);
+
         const lastMessage = bodyPokemon.messages[bodyPokemon.messages.length - 1];
         const msgContent = lastMessage.content;
         let msgContentJson = { type: "", content: ""};
@@ -201,7 +250,7 @@ function Homepage() {
                 ...pokedex, pokemonName
             ];
             setPokedex(newPokedex);
-            fetchPokemonData(newPokedex);
+            fetchPokemonData(newPokedex, allPokemon);
             setBodyPokemon(iaContext);
             postAnswer(iaContext);
 
@@ -216,7 +265,6 @@ function Homepage() {
                 }]
             });
         }
-
     };
 
     const handleCardClick = (pokemon: PokemonData) => {
@@ -224,24 +272,44 @@ function Homepage() {
         setIsPopupOpen(true);
     };
 
+    const handleDeleteCard = (pokemon: PokemonData) => {
+        const index = pokedex.findIndex((pokemonInList) => pokemonInList.toLowerCase() === pokemon.name.fr.toLowerCase());
+
+        const newPokedex = pokedex;
+        const deletedPokemonName = newPokedex.splice(index, 1);
+        setPokedex(newPokedex);
+
+        const requestOptions = {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                "pokemonName": deletedPokemonName[0]
+            })
+        };
+        fetch("api/pokedex", requestOptions);
+
+        fetchPokemonData(newPokedex, allPokemon);
+    }
+
     const handleClosePopup = () => {
         setIsPopupOpen(false);
         setSelectedPokemon(null);
     };
 
     const handleUpdateSettings = () => {
-        // localStorage.setItem('appLanguage', JSON.stringify(appLanguage));
+        setAppLanguage(tempAppLanguage);
 
         const requestOptions = {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                "language": appLanguage,
+                "language": tempAppLanguage,
                 "temperature": AiTemperature
             })
         };
 
-        fetch("api/setting", requestOptions);
+        fetch("api/setting", requestOptions);      
+        window.location.reload();
     }
 
     if (loading) {
@@ -261,10 +329,10 @@ function Homepage() {
                 </div>
                 <div className="homepage_right_container">
                     <div className="choice_btn_list_container">
-                        <ChoiceBtnList onAnswer={modifyBodyAndPost} />
+                        <ChoiceBtnList language={appLanguage} onAnswer={modifyBodyAndPost} />
                     </div>
                     <div className="question_area_container">
-                        <QuestionArea question={currentQuestion} />
+                        <QuestionArea isThinking={isThinking} question={currentQuestion} />
                     </div>
                 </div>
             </div>
@@ -276,6 +344,7 @@ function Homepage() {
                         imageUrl={pokemon.sprites.regular}
                         types={getPokemonTypesWithIcons(pokemon.types)}
                         onCardClick={handleCardClick}
+                        onDeleteCard={handleDeleteCard}
                         pokemonData={pokemon}
                     />
                 ))}
@@ -294,13 +363,12 @@ function Homepage() {
             <div className={`${settingsView ? 'settings_fullsize' : 'settings'}`}>
                 <div className="settings_visual">
                     <p className={`placeholder_text ${settingsView ? 'display_placeholder' : ''}`} onClick={() => setSettingsView(!settingsView)}>paramètres</p>
-                    <img src={settings_icon} alt="" onClick={() => setSettingsView(!settingsView)} />
+                    <img src={settings_icon} alt="settings icon" onClick={() => setSettingsView(!settingsView)} />
                 </div>
                 <div className={`${settingsView ? 'active' : 'inactive'}`}>
                     <div className="language_btn_list">
-                        <button onClick={() => setAppLanguage('fr')} className={`${appLanguage === 'fr' ? 'btn_active' :  'btn_inactive'}`}>fr</button>
-                        <button onClick={() => setAppLanguage('en')} className={`${appLanguage === 'en' ? 'btn_active' :  'btn_inactive'}`}>en</button>
-                        {/* <button onClick={() => setAppLanguage('jp')}>jp</button> */}
+                        <button onClick={() => setTempAppLanguage('fr')} className={`${tempAppLanguage === 'fr' ? 'btn_active' :  'btn_inactive'}`}>fr</button>
+                        <button onClick={() => setTempAppLanguage('en')} className={`${tempAppLanguage === 'en' ? 'btn_active' :  'btn_inactive'}`}>en</button>
                     </div>
                     <p>temperature {AiTemperature}</p>
                     <div className="range_container">

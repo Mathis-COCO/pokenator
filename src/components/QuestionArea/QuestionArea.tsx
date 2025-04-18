@@ -4,9 +4,10 @@ import pokeballPresentation from '../../img/pokeball_presentation.png';
 
 interface QuestionAreaProps {
   question: string | null;
+  isThinking: boolean;
 }
 
-function QuestionArea({ question }: QuestionAreaProps) {
+function QuestionArea({ question, isThinking }: QuestionAreaProps) {
 
   const firstTimeDescription = "Bienvenue sur Pokinator, l'assisant qui lit dans tes pensées, je vais te poser une série de questions auxquelles tu pourras répondre via un click sur la Pokéball comme indiqué ci-contre, après avoir trouvé ton Pokémon celui-ci sera affiché dans la liste présente au bas de la page."
   const [firstTime, setFirstTime] = useState(localStorage.getItem("firstTime"));
@@ -14,6 +15,14 @@ function QuestionArea({ question }: QuestionAreaProps) {
   const updateFirstTime = () => {
     localStorage.setItem("firstTime", "false");
     setFirstTime("false");
+  }
+
+  if (isThinking) {
+    return (
+      <div className="question_area">
+        <img className='thinking_img' alt='pokinator reflechis' src='thinking.webp' />
+      </div>
+    )
   }
 
   return (
