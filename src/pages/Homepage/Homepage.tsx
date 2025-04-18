@@ -49,11 +49,6 @@ function Homepage() {
     const [bodyPokemon, setBodyPokemon] = useState<ChatBody>(iaContext);
 
     useEffect(() => {
-        // const storedLanguage = localStorage.getItem('appLanguage');
-        // if (storedLanguage) {
-        //     setAppLanguage(JSON.parse(storedLanguage));
-        // }
-
         loadData();
     }, []);
 
@@ -72,7 +67,7 @@ function Homepage() {
             headers: { 'Content-Type': 'application/json' }
         };
 
-        const settings = await fetch("/setting", requestOptions)
+        const settings = await fetch('api/setting', requestOptions)
             .then((data) => data.json());
         
         setAiTemperature(settings.temperature);
@@ -85,7 +80,7 @@ function Homepage() {
             if (!response.ok) {
                 const errorMessage = `Erreur HTTP! Statut: ${response.status}`;
                 console.error('Erreur lors de la récupération des icônes de type:', errorMessage);
-                throw new Error(errorMessage);
+                return;
             }
             const data = await response.json();
             setTypeIcons(data);
@@ -103,7 +98,7 @@ function Homepage() {
             if (!response.ok) {
                 const errorMessage = `Erreur HTTP! Statut: ${response.status}`;
                 console.error('Erreur lors de la récupération des données Pokémon:', errorMessage);
-                throw new Error(errorMessage);
+                return;
             }
             const data: PokemonData[] = await response.json();
             setAllPokemon(data);
@@ -141,7 +136,7 @@ function Homepage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
             };
-            const response = await fetch('chat', requestOptions);
+            const response = await fetch('http://back/api/chat', requestOptions);
             if (!response.ok) {
                 const errorMessage = `Erreur HTTP lors de l'envoi de la réponse: Statut ${response.status}`;
                 console.error('Erreur lors de l\'envoi de la réponse:', errorMessage);
@@ -176,7 +171,7 @@ function Homepage() {
             headers: { 'Content-Type': 'application/json' }
         };
 
-        return fetch('/pokedex', requestOptions)
+        return fetch('api/pokedex', requestOptions)
             .then(data => data.json());
     }
 
@@ -189,7 +184,7 @@ function Homepage() {
             })
         };
 
-        fetch('/pokedex', requestOptions);
+        fetch('api/pokedex', requestOptions);
     }
 
     const modifyBodyAndPost = (answer: string) => {
@@ -246,7 +241,7 @@ function Homepage() {
             })
         };
 
-        fetch("/setting", requestOptions);
+        fetch("api/setting", requestOptions);
     }
 
     if (loading) {

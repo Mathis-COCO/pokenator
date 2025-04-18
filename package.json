@@ -44,5 +44,5 @@
   "devDependencies": {
     "sass": "^1.85.1"
   },
-  "proxy": "http://localhost:8080"
+  "proxy": "http://back:8080"
 }
