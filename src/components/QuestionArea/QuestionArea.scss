@@ -6,8 +6,8 @@
     height: 10rem;
     padding: 1rem;
     box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
--webkit-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
--moz-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+    -webkit-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
     p {
         font-family: monospace;
         font-size: 1.25rem;
@@ -33,5 +33,9 @@
         img {
             height: 10rem;
         }
+    }
+
+    .thinking_img {
+        height: 100%;
     }
 }

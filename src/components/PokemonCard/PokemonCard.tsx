@@ -6,17 +6,26 @@ interface PokemonCardProps {
   imageUrl?: string;
   types: { name: string; image: string }[];
   onCardClick: (pokemon: any) => void;
+  onDeleteCard: (pokemon: any) => void;
   pokemonData?: any;
 }
 
-function PokemonCard({ pokemonName, imageUrl, types, onCardClick, pokemonData }: PokemonCardProps) {
+function PokemonCard({ pokemonName, imageUrl, types, onCardClick, pokemonData, onDeleteCard }: PokemonCardProps) {
   const cardStyle = {
     backgroundColor: types && types.length > 0 ? getTypeColor(types[0].name) : '#f0f0f0',
   };
 
   return (
-    <div className="pokemon_card" style={cardStyle} onClick={() => onCardClick(pokemonData)}>
-      <img src={imageUrl || pokeball} alt={pokemonName} className="pokemon_card_image" />
+    <div className="pokemon_card" style={cardStyle}>
+      <div className='pokemon_container' onClick={() => onCardClick(pokemonData)}>
+        <img src={imageUrl || pokeball} alt={pokemonName} className="pokemon_card_image" />
+        <h1>{pokemonName}</h1>
+      </div>
+      <div className='delete_btn'>
+        <div className="type_icon" onClick={() => onDeleteCard(pokemonData)}>
+          <img src="delete_icon.webp" alt="delete icon" className='card_type_icon' />
+        </div>
+      </div>
       <div className="type_icons">
         {types && types.map((type) => (
           <div className="type_icon">
@@ -24,7 +33,6 @@ function PokemonCard({ pokemonName, imageUrl, types, onCardClick, pokemonData }:
           </div>
         ))}
       </div>
-      <h1>{pokemonName}</h1>
     </div>
   );
 }

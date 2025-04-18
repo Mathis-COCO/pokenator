@@ -3,9 +3,10 @@ import './PokeballAnswers.scss'; // Assurez-vous que le chemin est correct
 
 interface PokeballAnswersProps {
     onAnswer: (answer: string) => void;
+    language: string;
 }
 
-function PokeballAnswers({ onAnswer }: PokeballAnswersProps) {
+function PokeballAnswers({ onAnswer, language }: PokeballAnswersProps) {
     const handleTopClick = () => {
         onAnswer('oui'); // Appeler la fonction passée en prop avec la réponse
     };
@@ -21,7 +22,10 @@ function PokeballAnswers({ onAnswer }: PokeballAnswersProps) {
     return (
         <div className="pokeball">
             <div className="top" onClick={handleTopClick}>
-                <span className="text">Oui</span>
+                { language === "fr" 
+                    ? <span className="text">Oui</span>
+                    : <span className="text">Yes</span>
+                }
             </div>
             <div className="middle" onClick={handleMiddleClick}>
                 <div className="center">
@@ -29,7 +33,10 @@ function PokeballAnswers({ onAnswer }: PokeballAnswersProps) {
                 </div>
             </div>
             <div className="bottom" onClick={handleBottomClick}>
-                <span className="text">Non</span>
+            { language === "fr" 
+                    ? <span className="text">Non</span>
+                    : <span className="text">No</span>
+                }
             </div>
         </div>
     );
