@@ -1,13 +1,10 @@
-FROM node:23-alpine
+FROM node:23-slim
 
 WORKDIR /app
 
-COPY package*.json ./
-
-RUN npm install
-
 COPY . .
+RUN npm install --silent
+RUN npm install react-scripts@5.0.1 -g --silent
 
-EXPOSE 3000
 
 CMD ["npm", "start"]
